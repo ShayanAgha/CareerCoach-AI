@@ -18,9 +18,11 @@ from google.genai import types
 from flask import current_app
 
 # ── Pricing Constants (source + date documented above) ──────────────────────
-MODEL_NAME = "gemini-3.5-flash"
-INPUT_COST_PER_1M_USD = 0.30   # USD per 1,000,000 input tokens
-OUTPUT_COST_PER_1M_USD = 2.50  # USD per 1,000,000 output tokens
+# Primary: gemini-3.5-flash-lite — confirmed working, same pricing tier as 3.5 Flash
+# Fallback: gemini-3.5-flash — swap back when it stabilises (was 503 high-demand)
+MODEL_NAME = "gemini-3.5-flash-lite"
+INPUT_COST_PER_1M_USD = 0.30   # USD per 1,000,000 input tokens  (Gemini 3.5 Flash-Lite, July 2026)
+OUTPUT_COST_PER_1M_USD = 2.50  # USD per 1,000,000 output tokens (Gemini 3.5 Flash-Lite, July 2026)
 
 
 # ── System Prompt Builder ────────────────────────────────────────────────────

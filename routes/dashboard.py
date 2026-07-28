@@ -70,7 +70,7 @@ def api_usage():
     return jsonify(
         {
             "session_id": session_id,
-            "model": "gemini-3.5-flash",
+            "model": "gemini-3.5-flash-lite",
             "pricing": {
                 "input_per_1m_usd": 0.30,
                 "output_per_1m_usd": 2.50,

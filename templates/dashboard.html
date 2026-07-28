@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Usage Dashboard — Interview Prep Coach{% endblock %}
+{% block description %}See your token usage and estimated API cost for this coaching session.{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- ── Page Header ────────────────────────────────────────────────────── -->
+  <header class="dashboard-header">
+    <div class="dashboard-header-inner">
+      <div>
+        <h1 class="dashboard-title">Usage Dashboard</h1>
+        <p class="dashboard-subtitle">
+          Session for <strong>{{ onboarding.target_role }}</strong>
+          · {{ onboarding.experience_level }}
+          {% if onboarding.target_company %}· {{ onboarding.target_company }}{% endif %}
+        </p>
+      </div>
+      <a
+        href="{{ url_for('chat.chat_page', session_id=session_id) }}"
+        class="btn btn--outline"
+        id="back-to-chat-btn"
+      >
+        ← Back to Chat
+      </a>
+    </div>
+  </header>
+
+  <!-- ── Summary Cards ──────────────────────────────────────────────────── -->
+  <section class="stats-grid" aria-label="Usage summary">
+
+    <div class="stat-card" id="stat-requests">
+      <div class="stat-icon" aria-hidden="true">📡</div>
+      <div class="stat-body">
+        <p class="stat-label">API Calls</p>
+        <p class="stat-value" id="total-requests">{{ totals.total_requests or 0 }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card" id="stat-input-tokens">
+      <div class="stat-icon" aria-hidden="true">📥</div>
+      <div class="stat-body">
+        <p class="stat-label">Input Tokens</p>
+        <p class="stat-value" id="total-input-tokens">{{ "{:,}".format((totals.total_input_tokens or 0) | int) }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card" id="stat-output-tokens">
+      <div class="stat-icon" aria-hidden="true">📤</div>
+      <div class="stat-body">
+        <p class="stat-label">Output Tokens</p>
+        <p class="stat-value" id="total-output-tokens">{{ "{:,}".format((totals.total_output_tokens or 0) | int) }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card stat-card--accent" id="stat-cost">
+      <div class="stat-icon" aria-hidden="true">💰</div>
+      <div class="stat-body">
+        <p class="stat-label">Estimated Cost</p>
+        <p class="stat-value" id="total-cost">${{ "%.6f"|format(totals.total_cost or 0) }}</p>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ── Pricing Context ────────────────────────────────────────────────── -->
+  <div class="pricing-note" role="note">
+    <span class="pricing-note-icon" aria-hidden="true">ℹ</span>
+    Cost computed from real API <code>usage_metadata</code> using
+    <strong>Gemini 3.5 Flash</strong> rates: $0.30 / 1M input tokens · $2.50 / 1M output tokens
+    <span class="pricing-note-source">
+      (source: <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noopener">ai.google.dev</a>, July 2026)
+    </span>
+  </div>
+
+  <!-- ── Per-Call Breakdown Table ───────────────────────────────────────── -->
+  <section class="table-section" aria-label="Per-call breakdown">
+    <div class="table-header-row">
+      <h2 class="table-title">Per-Call Breakdown</h2>
+      <span class="table-badge">{{ totals.total_requests or 0 }} call{{ 's' if (totals.total_requests or 0) != 1 else '' }}</span>
+    </div>
+
+    {% if usage_logs %}
+    <div class="table-wrapper" role="region" aria-label="Usage log table" tabindex="0">
+      <table class="usage-table" id="usage-table">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Time</th>
+            <th scope="col">Input Tokens</th>
+            <th scope="col">Output Tokens</th>
+            <th scope="col">Total Tokens</th>
+            <th scope="col">Est. Cost (USD)</th>
+          </tr>
+        </thead>
+        <tbody id="usage-table-body">
+          {% for log in usage_logs %}
+          <tr>
+            <td class="td-index">{{ loop.index }}</td>
+            <td class="td-time">{{ log.created_at.strftime('%H:%M:%S') }}</td>
+            <td class="td-num">{{ "{:,}".format(log.prompt_tokens) }}</td>
+            <td class="td-num">{{ "{:,}".format(log.completion_tokens) }}</td>
+            <td class="td-num td-total">{{ "{:,}".format(log.total_tokens) }}</td>
+            <td class="td-cost">${{ "%.8f"|format(log.estimated_cost_usd) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="table-footer-row">
+            <td colspan="2" class="td-footer-label">Session Total</td>
+            <td class="td-num td-footer">{{ "{:,}".format((totals.total_input_tokens or 0) | int) }}</td>
+            <td class="td-num td-footer">{{ "{:,}".format((totals.total_output_tokens or 0) | int) }}</td>
+            <td class="td-num td-footer">{{ "{:,}".format((totals.total_tokens or 0) | int) }}</td>
+            <td class="td-cost td-footer">${{ "%.8f"|format(totals.total_cost or 0) }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <div class="table-empty" id="table-empty">
+      <span class="table-empty-icon" aria-hidden="true">📊</span>
+      <p>No API calls yet for this session. Start chatting to generate usage data!</p>
+      <a href="{{ url_for('chat.chat_page', session_id=session_id) }}" class="btn btn--primary" id="go-chat-btn">Go to Chat</a>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- ── API Endpoint Hint ───────────────────────────────────────────────── -->
+  <div class="api-hint" role="complementary">
+    <span class="api-hint-icon" aria-hidden="true">⚡</span>
+    Raw JSON available at:
+    <a href="{{ url_for('dashboard.api_usage', session_id=session_id) }}" class="api-hint-link" id="api-json-link" target="_blank">
+      /api/usage?session_id={{ session_id }}
+    </a>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  var sessionId = {{ session_id }};
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Start Your Session — Interview Prep Coach{% endblock %}
+{% block description %}Tell us about your interview goal and we'll coach you through it with personalised AI-powered practice.{% endblock %}
+
+{% block content %}
+<div class="onboarding-layout">
+
+  <!-- Left panel — hero copy -->
+  <div class="onboarding-hero" aria-hidden="true">
+    <div class="hero-content">
+      <div class="hero-badge">AI-Powered Coaching</div>
+      <h1 class="hero-title">Ace your next<br />interview.</h1>
+      <p class="hero-subtitle">
+        Get personalised practice questions, instant coaching feedback,
+        and build the confidence to land your dream role.
+      </p>
+      <ul class="hero-features" aria-label="Key features">
+        <li class="hero-feature">
+          <span class="feature-icon">✦</span>
+          <span>Questions calibrated to your level and target role</span>
+        </li>
+        <li class="hero-feature">
+          <span class="feature-icon">✦</span>
+          <span>Structured feedback after every answer</span>
+        </li>
+        <li class="hero-feature">
+          <span class="feature-icon">✦</span>
+          <span>Strict in-domain coaching — no distractions</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Right panel — form -->
+  <div class="onboarding-form-panel">
+    <div class="form-card">
+      <div class="form-card-header">
+        <h2 class="form-card-title">Set up your coaching session</h2>
+        <p class="form-card-subtitle">Tell us about your goal so we can tailor your practice.</p>
+      </div>
+
+      {% if errors %}
+      <div class="alert alert--error" role="alert" id="form-errors">
+        <span class="alert-icon">⚠</span>
+        <ul class="alert-list">
+          {% for error in errors %}
+          <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <form method="POST" action="/" class="onboarding-form" id="onboarding-form" novalidate>
+
+        <!-- Target Role -->
+        <div class="field-group">
+          <label class="field-label" for="target_role">
+            Target Role <span class="required" aria-label="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="target_role"
+            name="target_role"
+            class="field-input"
+            placeholder="e.g. Software Engineer, Product Manager, Data Scientist"
+            value="{{ form_data.get('target_role', '') }}"
+            required
+            autocomplete="off"
+            aria-required="true"
+          />
+        </div>
+
+        <!-- Experience Level -->
+        <div class="field-group">
+          <label class="field-label" for="experience_level">
+            Experience Level <span class="required" aria-label="required">*</span>
+          </label>
+          <div class="select-wrapper">
+            <select id="experience_level" name="experience_level" class="field-select" required aria-required="true">
+              <option value="" disabled {% if not form_data.get('experience_level') %}selected{% endif %}>
+                Select your level…
+              </option>
+              {% for level in experience_levels %}
+              <option value="{{ level }}" {% if form_data.get('experience_level') == level %}selected{% endif %}>
+                {{ level }}
+              </option>
+              {% endfor %}
+            </select>
+            <span class="select-arrow" aria-hidden="true">▾</span>
+          </div>
+        </div>
+
+        <!-- Interview Style -->
+        <div class="field-group">
+          <label class="field-label" for="interview_style">
+            Interview Style <span class="required" aria-label="required">*</span>
+          </label>
+          <div class="select-wrapper">
+            <select id="interview_style" name="interview_style" class="field-select" required aria-required="true">
+              <option value="" disabled {% if not form_data.get('interview_style') %}selected{% endif %}>
+                Select a style…
+              </option>
+              {% for style in interview_styles %}
+              <option value="{{ style }}" {% if form_data.get('interview_style') == style %}selected{% endif %}>
+                {{ style }}
+              </option>
+              {% endfor %}
+            </select>
+            <span class="select-arrow" aria-hidden="true">▾</span>
+          </div>
+        </div>
+
+        <!-- Target Company / Industry -->
+        <div class="field-group">
+          <label class="field-label" for="target_company">Target Company / Industry</label>
+          <input
+            type="text"
+            id="target_company"
+            name="target_company"
+            class="field-input"
+            placeholder="e.g. Google, fintech startup, healthcare industry"
+            value="{{ form_data.get('target_company', '') }}"
+            autocomplete="off"
+          />
+          <span class="field-hint">Optional — helps us personalise questions to your context.</span>
+        </div>
+
+        <!-- Weak Areas -->
+        <div class="field-group">
+          <label class="field-label" for="weak_areas">Areas to Work On</label>
+          <input
+            type="text"
+            id="weak_areas"
+            name="weak_areas"
+            class="field-input"
+            placeholder="e.g. system design, handling conflict, storytelling"
+            value="{{ form_data.get('weak_areas', '') }}"
+            autocomplete="off"
+          />
+          <span class="field-hint">Optional — tell us where you want to focus.</span>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--full" id="start-session-btn">
+          <span class="btn-text">Start My Coaching Session</span>
+          <span class="btn-icon" aria-hidden="true">→</span>
+        </button>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Client-side validation and loading state
+  const form = document.getElementById('onboarding-form');
+  const btn  = document.getElementById('start-session-btn');
+
+  form.addEventListener('submit', function (e) {
+    const role  = document.getElementById('target_role').value.trim();
+    const level = document.getElementById('experience_level').value;
+    const style = document.getElementById('interview_style').value;
+
+    if (!role || !level || !style) {
+      e.preventDefault();
+      // Highlight missing fields
+      if (!role)  document.getElementById('target_role').classList.add('field-input--error');
+      if (!level) document.getElementById('experience_level').classList.add('field-select--error');
+      if (!style) document.getElementById('interview_style').classList.add('field-select--error');
+      return;
+    }
+
+    // Loading state on submit
+    btn.disabled = true;
+    btn.querySelector('.btn-text').textContent = 'Starting…';
+    btn.querySelector('.btn-icon').textContent  = '⏳';
+  });
+
+  // Clear error styling on input change
+  ['target_role', 'experience_level', 'interview_style'].forEach(function(id) {
+    document.getElementById(id).addEventListener('change', function() {
+      this.classList.remove('field-input--error', 'field-select--error');
+    });
+    document.getElementById(id).addEventListener('input', function() {
+      this.classList.remove('field-input--error', 'field-select--error');
+    });
+  });
+</script>
+{% endblock %}

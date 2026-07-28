@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Interview Prep Coach{% endblock %}</title>
+  <meta name="description" content="{% block description %}AI-powered interview preparation coaching — practice, get feedback, and land your dream role.{% endblock %}" />
+
+  <!-- Inter font from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- ── Navigation ─────────────────────────────────────────────────────── -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="/" class="nav-brand" aria-label="Interview Prep Coach home">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span class="brand-name">Interview Prep Coach</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/" class="nav-link" id="nav-new-session">New Session</a>
+        {% if session_id is defined and session_id %}
+          <a href="{{ url_for('chat.chat_page', session_id=session_id) }}" class="nav-link" id="nav-chat">Chat</a>
+          <a href="{{ url_for('dashboard.dashboard', session_id=session_id) }}" class="nav-link nav-link--accent" id="nav-dashboard">Dashboard</a>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Page Content ───────────────────────────────────────────────────── -->
+  <main class="main-content" id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

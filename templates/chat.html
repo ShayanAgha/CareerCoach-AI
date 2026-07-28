@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Coach Chat — Interview Prep Coach{% endblock %}
+{% block description %}Practice your interview with your AI coach. Get real questions and expert feedback.{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+
+  <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+  <aside class="chat-sidebar" id="chat-sidebar" aria-label="Session info">
+    <div class="sidebar-section">
+      <p class="sidebar-label">Coaching Session</p>
+      <p class="sidebar-value sidebar-value--lg">{{ onboarding.target_role }}</p>
+    </div>
+
+    <div class="sidebar-divider" aria-hidden="true"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-meta-row">
+        <span class="sidebar-meta-label">Level</span>
+        <span class="sidebar-meta-value">{{ onboarding.experience_level }}</span>
+      </div>
+      <div class="sidebar-meta-row">
+        <span class="sidebar-meta-label">Style</span>
+        <span class="sidebar-meta-value">{{ onboarding.interview_style }}</span>
+      </div>
+      {% if onboarding.target_company %}
+      <div class="sidebar-meta-row">
+        <span class="sidebar-meta-label">Target</span>
+        <span class="sidebar-meta-value">{{ onboarding.target_company }}</span>
+      </div>
+      {% endif %}
+      {% if onboarding.weak_areas and onboarding.weak_areas != 'general interview skills' %}
+      <div class="sidebar-meta-row">
+        <span class="sidebar-meta-label">Focus</span>
+        <span class="sidebar-meta-value">{{ onboarding.weak_areas }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="sidebar-divider" aria-hidden="true"></div>
+
+    <div class="sidebar-section">
+      <a
+        href="{{ url_for('dashboard.dashboard', session_id=session_id) }}"
+        class="btn btn--outline btn--full"
+        id="sidebar-dashboard-btn"
+      >
+        View Usage Dashboard
+      </a>
+    </div>
+
+    <div class="sidebar-section sidebar-tip">
+      <p class="sidebar-tip-text">
+        💡 Answer each question as you would in a real interview. Your coach will give feedback after every response.
+      </p>
+    </div>
+  </aside>
+
+  <!-- ── Chat Area ──────────────────────────────────────────────────────── -->
+  <div class="chat-area" id="chat-area">
+
+    <!-- Message list -->
+    <div class="message-list" id="message-list" role="log" aria-live="polite" aria-label="Chat messages">
+
+      {% if not messages %}
+      <!-- First-load empty state — bot will greet once user sends first message -->
+      <div class="chat-empty-state" id="chat-empty-state">
+        <div class="empty-icon" aria-hidden="true">🎯</div>
+        <h3 class="empty-title">Your coach is ready!</h3>
+        <p class="empty-text">Send a message to begin your practice session. Your coach will ask tailored questions and give you detailed feedback.</p>
+      </div>
+      {% endif %}
+
+      {% for msg in messages %}
+      <div class="message {{ 'message--user' if msg.role == 'user' else 'message--ai' }}" data-role="{{ msg.role }}">
+        {% if msg.role == 'model' %}
+        <div class="message-avatar" aria-hidden="true">
+          <span class="avatar-initials">AI</span>
+        </div>
+        {% endif %}
+        <div class="message-body">
+          <div class="message-bubble">{{ msg.content }}</div>
+          <div class="message-meta">
+            <span class="meta-sender">{{ 'You' if msg.role == 'user' else 'Coach' }}</span>
+            <span class="meta-time">{{ msg.created_at.strftime('%H:%M') }}</span>
+          </div>
+        </div>
+        {% if msg.role == 'user' %}
+        <div class="message-avatar message-avatar--user" aria-hidden="true">
+          <span class="avatar-initials">You</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <!-- Loading indicator (hidden by default) -->
+      <div class="message message--ai message--loading" id="loading-indicator" style="display:none;" aria-hidden="true">
+        <div class="message-avatar">
+          <span class="avatar-initials">AI</span>
+        </div>
+        <div class="message-body">
+          <div class="message-bubble message-bubble--loading">
+            <span class="dot-pulse"></span>
+            <span class="dot-pulse"></span>
+            <span class="dot-pulse"></span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /message-list -->
+
+    <!-- Error banner -->
+    <div class="chat-error-banner" id="chat-error-banner" role="alert" style="display:none;">
+      <span id="chat-error-text"></span>
+      <button class="error-dismiss" id="error-dismiss-btn" aria-label="Dismiss error">✕</button>
+    </div>
+
+    <!-- Token info bar -->
+    <div class="token-bar" id="token-bar" style="display:none;" aria-live="polite">
+      <span class="token-bar-text" id="token-bar-text"></span>
+    </div>
+
+    <!-- Input area -->
+    <div class="chat-input-area" id="chat-input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="message-input"
+          class="message-input"
+          placeholder="Type your answer or question… (Enter to send, Shift+Enter for new line)"
+          rows="1"
+          aria-label="Message input"
+          autocomplete="off"
+          spellcheck="true"
+        ></textarea>
+        <button
+          id="send-btn"
+          class="send-btn"
+          aria-label="Send message"
+          title="Send message"
+          disabled
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /chat-area -->
+
+</div><!-- /chat-layout -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Pass session_id to chat.js via a data attribute
+  document.getElementById('chat-area').dataset.sessionId = "{{ session_id }}";
+</script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

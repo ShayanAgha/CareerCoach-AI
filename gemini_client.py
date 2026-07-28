@@ -2,6 +2,8 @@
 Gemini API client for Interview Prep Coach.
 
 Model:   gemini-3.5-flash
+SDK:     google-genai (the current/supported SDK — google.generativeai is deprecated)
+
 Pricing (as of July 2026):
   Input tokens:  $0.30 per 1,000,000 tokens
   Output tokens: $2.50 per 1,000,000 tokens
@@ -11,7 +13,8 @@ Source: https://ai.google.dev/gemini-api/docs/pricing
 IMPORTANT: update MODEL_NAME below if Google renames or deprecates this model.
 """
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from flask import current_app
 
 # ── Pricing Constants (source + date documented above) ──────────────────────
@@ -28,11 +31,11 @@ def build_system_prompt(onboarding_data: dict) -> str:
     onboarding data. The prompt locks the model to the interview-prep domain
     and gives it rich context to ask relevant questions.
     """
-    role = onboarding_data.get("target_role", "a professional role")
-    level = onboarding_data.get("experience_level", "mid-level")
-    weak_areas = onboarding_data.get("weak_areas", "general interview skills")
-    style = onboarding_data.get("interview_style", "behavioral")
-    company = onboarding_data.get("target_company", "a company in their industry")
+    role    = onboarding_data.get("target_role",       "a professional role")
+    level   = onboarding_data.get("experience_level",  "mid-level")
+    weak    = onboarding_data.get("weak_areas",        "general interview skills")
+    style   = onboarding_data.get("interview_style",   "behavioral")
+    company = onboarding_data.get("target_company",    "a company in their industry")
 
     return f"""You are an expert Interview Prep Coach. Your entire professional purpose is to help candidates excel in job interviews.
 
@@ -43,7 +46,7 @@ Target Role:              {role}
 Experience Level:         {level}
 Target Company/Industry:  {company}
 Interview Style Focus:    {style}
-Self-identified Weak Areas: {weak_areas}
+Self-identified Weak Areas: {weak}
 
 ═══════════════════════════════════════════
 YOUR COACHING APPROACH
@@ -113,7 +116,7 @@ def call_gemini(messages: list[dict], system_prompt: str) -> tuple:
 
     Raises:
         RuntimeError: if GEMINI_API_KEY is not set.
-        google.generativeai exceptions: propagated for the route to handle.
+        google.genai exceptions: propagated for the route to handle.
     """
     api_key = current_app.config.get("GEMINI_API_KEY")
     if not api_key:
@@ -121,23 +124,32 @@ def call_gemini(messages: list[dict], system_prompt: str) -> tuple:
             "GEMINI_API_KEY is not set. Add it to your .env file."
         )
 
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
-    model = genai.GenerativeModel(
-        model_name=MODEL_NAME,
-        system_instruction=system_prompt,
-    )
-
-    # Convert our flat message dicts to Gemini's content format.
+    # Convert our flat message dicts to Gemini's Content format.
     # Passing the full history on every call is deliberate — this is what
     # makes token counts grow with conversation length (multi-turn proof).
     contents = [
-        {"role": msg["role"], "parts": [{"text": msg["content"]}]}
+        types.Content(
+            role=msg["role"],
+            parts=[types.Part(text=msg["content"])]
+        )
         for msg in messages
     ]
 
-    response = model.generate_content(contents)
-    return response.text, response.usage_metadata
+    config = types.GenerateContentConfig(
+        system_instruction=system_prompt,
+    )
+
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=contents,
+        config=config,
+    )
+
+    reply_text = response.text
+    usage = response.usage_metadata
+    return reply_text, usage
 
 
 # ── Cost Calculation ─────────────────────────────────────────────────────────
@@ -157,20 +169,20 @@ def compute_cost(usage_metadata) -> dict:
             "estimated_cost_usd": float  (8 decimal places)
         }
     """
-    prompt_tokens = int(getattr(usage_metadata, "prompt_token_count", 0) or 0)
+    prompt_tokens     = int(getattr(usage_metadata, "prompt_token_count",     0) or 0)
     completion_tokens = int(getattr(usage_metadata, "candidates_token_count", 0) or 0)
-    total_tokens = int(
+    total_tokens      = int(
         getattr(usage_metadata, "total_token_count", 0)
         or (prompt_tokens + completion_tokens)
     )
 
-    input_cost = (prompt_tokens / 1_000_000) * INPUT_COST_PER_1M_USD
-    output_cost = (completion_tokens / 1_000_000) * OUTPUT_COST_PER_1M_USD
+    input_cost     = (prompt_tokens     / 1_000_000) * INPUT_COST_PER_1M_USD
+    output_cost    = (completion_tokens / 1_000_000) * OUTPUT_COST_PER_1M_USD
     estimated_cost = round(input_cost + output_cost, 8)
 
     return {
-        "prompt_tokens": prompt_tokens,
-        "completion_tokens": completion_tokens,
-        "total_tokens": total_tokens,
+        "prompt_tokens":      prompt_tokens,
+        "completion_tokens":  completion_tokens,
+        "total_tokens":       total_tokens,
         "estimated_cost_usd": estimated_cost,
     }

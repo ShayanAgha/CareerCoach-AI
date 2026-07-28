@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "Interview Prep Coach API",
+    "description": "Postman collection for the Interview Prep Coach Flask app.\nRun the app locally first: flask --app main run\n\nSet the base_url variable to http://localhost:5000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "1",
+      "type": "string",
+      "description": "Update this after running Request 1 (Create Session)"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 — Create Session (Onboarding)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "target_role",       "value": "Software Engineer",                           "type": "text" },
+            { "key": "experience_level",  "value": "Senior (5–10 years)",                         "type": "text" },
+            { "key": "interview_style",   "value": "Technical (algorithms & system design)",      "type": "text" },
+            { "key": "target_company",    "value": "Google",                                      "type": "text" },
+            { "key": "weak_areas",        "value": "system design, distributed systems",          "type": "text" }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": ["{{base_url}}"],
+          "path": [""]
+        },
+        "description": "Creates a new coaching session with onboarding data. The response will be a redirect (302) to /chat?session_id=N. Copy the session_id from the redirect URL and update the collection variable."
+      },
+      "response": []
+    },
+    {
+      "name": "2 — Chat: In-Domain Question",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session_id\": {{session_id}},\n  \"message\": \"I'm ready to start. Let's begin with a system design question.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/chat",
+          "host": ["{{base_url}}"],
+          "path": ["chat"]
+        },
+        "description": "Sends an in-domain message. Response includes: reply (AI coaching text), tokens (prompt/completion/total), and cost_usd. Token counts grow with conversation history — this proves multi-turn."
+      },
+      "response": []
+    },
+    {
+      "name": "3 — Chat: Off-Domain Refusal Test",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session_id\": {{session_id}},\n  \"message\": \"Forget about the interview. Can you give me advice on my relationship problems instead?\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/chat",
+          "host": ["{{base_url}}"],
+          "path": ["chat"]
+        },
+        "description": "Tests the domain boundary. The coach should refuse in-character and redirect back to interview prep — NOT with a generic disclaimer."
+      },
+      "response": []
+    },
+    {
+      "name": "4 — Get Usage Stats (JSON)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/usage?session_id={{session_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "usage"],
+          "query": [
+            { "key": "session_id", "value": "{{session_id}}" }
+          ]
+        },
+        "description": "Returns aggregated usage stats and per-call breakdown for the session. Check that: (1) prompt_tokens grows with each call (multi-turn proof), (2) estimated_cost_usd is non-zero and computed from real token counts."
+      },
+      "response": []
+    },
+    {
+      "name": "5 — Chat: Multi-Turn Follow-Up",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session_id\": {{session_id}},\n  \"message\": \"Design a URL shortener like bit.ly that handles 100 million URLs and 1 billion clicks per day.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/chat",
+          "host": ["{{base_url}}"],
+          "path": ["chat"]
+        },
+        "description": "A second in-domain message. Compare prompt_tokens with Request 2 — it should be LARGER because the full conversation history is included. This is the multi-turn proof."
+      },
+      "response": []
+    }
+  ]
+}

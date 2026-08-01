@@ -1,7 +1,7 @@
 """
 Gemini API client for Interview Prep Coach.
 
-Model:   gemini-3.5-flash
+Model:   gemini-3.5-flash-lite
 SDK:     google-genai (the current/supported SDK — google.generativeai is deprecated)
 
 Pricing (as of July 2026):
@@ -161,7 +161,7 @@ def compute_cost(usage_metadata) -> dict:
     Extract real token counts from Gemini's usage_metadata and compute cost.
 
     Token counts come from the API response — never hardcoded.
-    Pricing: Gemini 3.5 Flash @ $0.30/1M input, $2.50/1M output (July 2026).
+    Pricing: Gemini 3.5 Flash-Lite @ $0.30/1M input, $2.50/1M output (July 2026).
 
     Returns:
         {

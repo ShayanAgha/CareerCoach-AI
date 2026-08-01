@@ -1,6 +1,6 @@
 # Interview Prep Coach — AI-Powered Career Coaching Chatbot
 
-A production-ready Flask web application that acts as a personalised **Interview Prep Coach**. It uses the Gemini 3.5 Flash API to ask structured interview questions, give detailed coaching feedback, and refuse all off-domain requests in-character.
+A production-ready Flask web application that acts as a personalised **Interview Prep Coach**. It uses the Gemini 3.5 Flash Lite API to ask structured interview questions, give detailed coaching feedback, and refuse all off-domain requests in-character.
 
 ---
 
@@ -19,7 +19,7 @@ Interview prep was chosen because:
 | Layer | Choice | Reason |
 |---|---|---|
 | Backend | Flask 3.x (WSGI) | Spec requirement |
-| LLM | Gemini 3.5 Flash (free tier) | Free tier available, fast, strong instruction-following |
+| LLM | Gemini 3.5 Flash-Lite (free tier) | Free tier available, low-cost, and optimized for fast coaching responses |
 | ORM | Flask-SQLAlchemy | Env-driven connection string, easy model definition |
 | Local DB | SQLite (`instance/app.db`) | Zero setup for local dev |
 | Frontend | Vanilla HTML/CSS/JS | Spec requirement, no frameworks |
@@ -126,7 +126,7 @@ Key design decision: the system prompt is passed via `system_instruction` in the
 
 ## Pricing & Cost Calculation
 
-**Model:** `gemini-3.5-flash`
+**Model:** `gemini-3.5-flash-lite`
 
 | Token type | Rate |
 |---|---|
